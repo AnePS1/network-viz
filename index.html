@@ -2,22 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Network Preview</title>
-
-  <!-- 1) Load Cytoscape core -->
+  <title>Minimal Cytoscape Test</title>
   <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
-  <!-- 2) Load cose-bilkent layout -->
-  <script src="https://unpkg.com/cytoscape-cose-bilkent@4/cytoscape-cose-bilkent.js"></script>
-  <!-- 3) Register cose-bilkent -->
-  <script>
-    if (window.coseBilkent) {
-      cytoscape.use(window.coseBilkent);
-      console.log('✅ cose-bilkent registered');
-    } else {
-      console.warn('⚠️ cose-bilkent missing');
-    }
-  </script>
-
   <style>
     html, body { margin:0; padding:0; height:100%; }
     #cy { width:100%; height:100%; }
@@ -25,102 +11,20 @@
 </head>
 <body>
   <div id="cy"></div>
-
   <script>
-    // Our minimal fallback sample
-    const sample = {
-      tables: {
-        DEFAULT: [
-          { 
-            dimensions: [
-              "Company","ACME","http://acme","NYC","1998","500","$10M","http://acme",
-              "Partnership","Research Center","BioLab"
-            ],
-            metrics: [3]
-          },
-          { 
-            dimensions: [
-              "Company","FooCorp","http://foo","LA","2005","120","$2M","http://foo",
-              "Joint Venture","University","UniTech"
-            ],
-            metrics: [5]
-          },
-          { 
-            dimensions: [
-              "Research Center","Bar Labs","http://bar","Boston","2010","80","$1.2M","http://bar",
-              "Collaboration","Company","ACME"
-            ],
-            metrics: [2]
-          }
-        ]
-      }
-    };
-
     document.addEventListener('DOMContentLoaded', () => {
-      // Parse sample into nodes & edges
-      const nodes = {}, edges = [];
-      sample.tables.DEFAULT.forEach(r => {
-        const d = r.dimensions, m = r.metrics;
-        if (!nodes[d[1]]) {
-          nodes[d[1]] = { data: { id:d[1], label:d[1], type:d[0], degree:0 } };
-        }
-        if (!nodes[d[10]]) {
-          nodes[d[10]] = { data: { id:d[10], label:d[10], type:d[9], degree:0 } };
-        }
-        edges.push({ data: { id:`${d[1]}→${d[10]}`, source:d[1], target:d[10], type:d[8], weight:+m[0] } });
-        nodes[d[1]].data.degree++;
-        nodes[d[10]].data.degree++;
-      });
-
-      // Initialize Cytoscape
       cytoscape({
         container: document.getElementById('cy'),
-        elements: {
-          nodes: Object.values(nodes),
-          edges: edges
-        },
-        style: [
-          {
-            selector: 'node',
-            style: {
-              'background-color': n=>({
-                Company:'#3399ff',
-                University:'#33cc33',
-                'Research Center':'#ff9933'
-              }[n.data('type')]||'#999'),
-              'width': n=>10 + n.data('degree')*2,
-              'height': n=>10 + n.data('degree')*2,
-              'label': 'data(label)',
-              'font-size': 12
-            }
-          },
-          {
-            selector: 'edge',
-            style: {
-              'width': 'mapData(weight, 0, 10, 1, 6)',
-              'line-color': e=>({
-                Partnership:'#1f77b4',
-                'Joint Venture':'#ff7f0e',
-                Acquisition:'#2ca02c',
-                Collaboration:'#d62728'
-              }[e.data('type')]||'#999'),
-              'target-arrow-shape': 'triangle',
-              'target-arrow-color': e=>({
-                Partnership:'#1f77b4',
-                'Joint Venture':'#ff7f0e',
-                Acquisition:'#2ca02c',
-                Collaboration:'#d62728'
-              }[e.data('type')]||'#999')
-            }
-          }
+        elements: [
+          { data: { id: 'a' } },
+          { data: { id: 'b' } },
+          { data: { source: 'a', target: 'b', id: 'a_b' } }
         ],
-        layout: {
-          name: 'cose-bilkent',
-          fit: true,
-          padding: 30,
-          randomize: true,
-          animate: true
-        }
+        style: [
+          { selector: 'node', style: { 'background-color': '#3399ff', 'label': 'data(id)' } },
+          { selector: 'edge', style: { 'line-color': '#999', 'target-arrow-shape': 'triangle' } }
+        ],
+        layout: { name: 'grid' }
       });
     });
   </script>
