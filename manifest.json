@@ -1,9 +1,10 @@
 {
-  "name": "Network Community Viz",
   "version": "1.0.0",
-  "description": "An interactive Cytoscape.js network graph",
-  "entrypoint": "index.html",
-  "assets": [
-    { "path": "index.html" }
+  "visualizations": [
+    {
+      "id": "networkCommunityViz",
+      "name": "Network Community Viz",
+      "entrypoint": "index.html"
+    }
   ]
 }
