@@ -6,18 +6,16 @@
 
   <!-- 1) Core Cytoscape -->
   <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
-  <!-- 2) cose-bilkent layout plugin -->
+  <!-- 2) cose‐bilkent layout plugin ONLY -->
   <script src="https://unpkg.com/cytoscape-cose-bilkent@4/cytoscape-cose-bilkent.js"></script>
-  <!-- 3) Register cose-bilkent with Cytoscape -->
+  <!-- 3) Register cose‐bilkent -->
   <script>
-    (function(){
-      if(window.coseBilkent){
-        cytoscape.use(window.coseBilkent);
-        console.log('✅ cose-bilkent layout registered');
-      } else {
-        console.warn('⚠️ cose-bilkent plugin not found');
-      }
-    })();
+    if (window.coseBilkent) {
+      cytoscape.use(window.coseBilkent);
+      console.log('✅ cose-bilkent registered');
+    } else {
+      console.warn('⚠️ cose-bilkent plugin missing');
+    }
   </script>
 
   <style>
@@ -26,11 +24,11 @@
     #legend {
       position:absolute; top:10px; right:10px;
       background:white; padding:8px; font:12px sans-serif;
-      white-space: pre-line;
-      border:1px solid #ddd; border-radius:4px;
+      white-space: pre-line; border:1px solid #ddd; border-radius:4px;
     }
   </style>
 </head>
+
 <body>
   <div id="cy"></div>
   <div id="legend"></div>
@@ -40,69 +38,51 @@
     const dscc = window.dscc;
     const chart = {};
 
-    chart.draw = function(data) {
+    chart.draw = data => {
       const nodes = {}, edges = [];
 
       data.tables.DEFAULT.forEach(row => {
         const d = row.dimensions, m = row.metrics;
 
-        // Source
         if (!nodes[d[1]]) {
           nodes[d[1]] = { data: {
-            id:      d[1],
-            label:   d[1],
-            type:    d[0],
-            website: d[2],
-            hq:      d[3],
-            founded: d[4],
-            emp:     d[5],
-            rev:     d[6],
-            link:    d[7],
-            degree:  0
-          }};
-        }
-        // Target
-        if (!nodes[d[10]]) {
-          nodes[d[10]] = { data: {
-            id:     d[10],
-            label:  d[10],
-            type:   d[9],
-            degree: 0
+            id: d[1], label: d[1], type: d[0],
+            website: d[2], hq: d[3], founded: d[4],
+            emp: d[5], rev: d[6], link: d[7], degree: 0
           }};
         }
 
-        // Edge
+        if (!nodes[d[10]]) {
+          nodes[d[10]] = { data: {
+            id: d[10], label: d[10], type: d[9], degree: 0
+          }};
+        }
+
         edges.push({ data:{
           id:     `${d[1]}→${d[10]}`,
-          source: d[1],
-          target: d[10],
-          type:   d[8],
-          weight: +m[0]
+          source: d[1], target: d[10],
+          type:   d[8], weight: +m[0]
         }});
 
         nodes[d[1]].data.degree++;
         nodes[d[10]].data.degree++;
       });
 
-      const elements = {
-        nodes: Object.values(nodes),
-        edges
-      };
+      const elements = { nodes: Object.values(nodes), edges };
 
-      // init or update Cytoscape
       let cy = window._cyInstance;
       if (!cy) {
         cy = cytoscape({
           container: document.getElementById('cy'),
-          elements,
-          style:[
+          elements, style: [
             {
               selector:'node',
               style:{
-                'background-color': n=>{
-                  const map={ Company:'#3399ff', University:'#33cc33', 'Research Center':'#ff9933' };
-                  return map[n.data('type')]||'#999';
-                },
+                'background-color': n=>({
+                  Company:'#3399ff',
+                  University:'#33cc33',
+                  'Research Center':'#ff9933'
+                }[n.data('type')]||'#999'),
                 'width': n=>10+n.data('degree')*2,
                 'height':n=>10+n.data('degree')*2,
                 'label':'data(label)','font-size':8
@@ -112,24 +92,25 @@
               selector:'edge',
               style:{
                 'width':'mapData(weight,0,10,1,6)',
-                'line-color': e=>{
-                  const map={ Partnership:'#1f77b4', 'Joint Venture':'#ff7f0e', Acquisition:'#2ca02c', Collaboration:'#d62728' };
-                  return map[e.data('type')]||'#999';
-                },
+                'line-color': e=>({
+                  Partnership:'#1f77b4',
+                  'Joint Venture':'#ff7f0e',
+                  Acquisition:'#2ca02c',
+                  Collaboration:'#d62728'
+                }[e.data('type')]||'#999'),
                 'target-arrow-shape':'triangle',
-                'target-arrow-color': e=>{
-                  const map={ Partnership:'#1f77b4', 'Joint Venture':'#ff7f0e', Acquisition:'#2ca02c', Collaboration:'#d62728' };
-                  return map[e.data('type')]||'#999';
-                }
+                'target-arrow-color': e=>({
+                  Partnership:'#1f77b4',
+                  'Joint Venture':'#ff7f0e',
+                  Acquisition:'#2ca02c',
+                  Collaboration:'#d62728'
+                }[e.data('type')]||'#999')
               }
             }
           ],
           layout:{
-            name:'cose-bilkent',
-            fit:true,
-            padding:30,
-            randomize:true,
-            animate:true
+            name:'cose-bilkent', fit:true,
+            padding:30, randomize:true, animate:true
           }
         });
         window._cyInstance = cy;
@@ -139,43 +120,44 @@
         cy.layout({ name:'cose-bilkent', fit:true, padding:30, randomize:true, animate:true }).run();
       }
 
-      // Hover tooltip
-      cy.on('mouseover','node',evt=>{
+      cy.on('mouseover','node', evt=>{
         const d=evt.target.data();
         document.getElementById('legend').innerText=
           `${d.label}\nType: ${d.type}\nFounded: ${d.founded}\nEmployees: ${d.emp}\nRevenue: ${d.rev}`;
       });
-      cy.on('mouseout','node',()=> document.getElementById('legend').innerText='');
-
-      // Click-to-open
-      cy.on('tap','node',evt=>{
+      cy.on('mouseout','node', ()=> document.getElementById('legend').innerText='');
+      cy.on('tap','node', evt=>{
         const url=evt.target.data('link');
         if(url) window.open(url,'_blank');
       });
     };
 
-    // Register with Looker
-    if (dscc && dscc.register) dscc.register({ draw: chart.draw });
-
-    // === LOCAL PREVIEW FALLBACK ===
-    if (!window.dscc) {
-      console.log('🚀 FALLBACK firing');
-      const sample={ tables:{ DEFAULT:[
-        { dimensions:[
-          "Company","ACME Co.","http://acme.io","NYC","1998","500","$10M","http://acme.io",
-          "Partnership","Research Center","BioLab"
-        ], metrics:[3] },
-        { dimensions:[
-          "Company","FooCorp","http://foocorp.com","LA","2005","120","$2M","http://foocorp.com",
-          "Joint Venture","University","UniTech"
-        ], metrics:[5] },
-        { dimensions:[
-          "Research Center","Bar Labs","http://barlabs.org","Boston","2010","80","$1.2M","http://barlabs.org",
-          "Collaboration","Company","ACME Co."
-        ], metrics:[2] }
-      ]}};
-      window.addEventListener('load',()=> chart.draw(sample));
+    if (dscc && dscc.register) {
+      dscc.register({ draw: chart.draw });
     }
+
+    // Local fallback preview
+    if (!window.dscc) {
+      console.log('🚀 fallback running');
+      const sample = {
+        tables:{ DEFAULT:[
+          { dimensions:[
+            "Company","ACME","http://acme","NY","1998","500","$10M","http://acme",
+            "Partnership","Research Center","BioLab"
+          ], metrics:[3] },
+          { dimensions:[
+            "Company","Foo","http://foo","LA","2005","120","$2M","http://foo",
+            "Joint Venture","University","UniTech"
+          ], metrics:[5] },
+          { dimensions:[
+            "Research Center","Bar","http://bar","Boston","2010","80","$1.2M","http://bar",
+            "Collaboration","Company","ACME"
+          ], metrics:[2] }
+        ]}
+      };
+      window.addEventListener('load', ()=> chart.draw(sample));
+    }
+
   })();
   </script>
 </body>
