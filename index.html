@@ -3,16 +3,31 @@
 <head>
   <meta charset="utf-8">
   <title>Network Community Viz</title>
-  <!-- 1) Load Cytoscape + fcose (Force-Atlas2–like) -->
+
+  <!-- 1) Cytoscape core -->
   <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
+  <!-- 2) fcose layout plugin -->
   <script src="https://unpkg.com/cytoscape-fcose@1.2.0/cytoscape-fcose.js"></script>
+  <!-- 3) Register the fcose plugin with Cytoscape -->
+  <script>
+    (function registerFcose(){
+      // cytoscapeFcose is exposed by the plugin script
+      const fcose = window.cytoscapeFcose || (window.cytoscapeFcose = window.cytoscapeFcose || null);
+      if (fcose) {
+        cytoscape.use(fcose);
+        console.log('✅ fcose layout registered');
+      } else {
+        console.warn('⚠️ fcose plugin not found');
+      }
+    })();
+  </script>
+
   <style>
     body, html { margin:0; padding:0; height:100%; }
-    #cy { width:100%; height:100%; }
+    #cy { width:100%; height:100%; display:block; }
     #legend {
       position:absolute;
-      top:10px;
-      right:10px;
+      top:10px; right:10px;
       background:white;
       padding:6px;
       font:12px sans-serif;
@@ -25,17 +40,19 @@
   <div id="legend"></div>
 
   <script>
-  (function() {
+  // Wrap in an IIFE so variables don't leak
+  (function(){
     const dscc = window.dscc;
     const chart = {};
 
     chart.draw = function(data) {
+      // Build nodes & edges from Looker data
       const nodes = {};
       const edges = [];
 
       data.tables.DEFAULT.forEach(row => {
-        const d = row.dimensions; // [0..10]
-        const m = row.metrics;    // [0] = Weight
+        const d = row.dimensions;
+        const m = row.metrics;
 
         // Source node
         if (!nodes[d[1]]) {
@@ -78,7 +95,7 @@
           }
         });
 
-        // Degree count
+        // Increase degree
         nodes[d[1]].data.degree++;
         nodes[d[10]].data.degree++;
       });
@@ -88,7 +105,7 @@
         edges: edges
       };
 
-      // Initialize or update Cytoscape instance
+      // Initialize Cytoscape (or update)
       let cy = window._cyInstance;
       if (!cy) {
         cy = cytoscape({
@@ -151,7 +168,7 @@
         cy.layout({ name:'fcose', quality:'proof', randomize:true }).run();
       }
 
-      // Tooltips
+      // Hover tooltip
       cy.on('mouseover', 'node', evt => {
         const d = evt.target.data();
         document.getElementById('legend').innerText =
@@ -161,50 +178,55 @@
         document.getElementById('legend').innerText = '';
       });
 
-      // Click to drill
+      // Click-to-open link
       cy.on('tap', 'node', evt => {
         const url = evt.target.data('link');
         if (url) window.open(url, '_blank');
       });
     };
 
+    // Register with Looker Studio
     if (dscc && dscc.register) {
       dscc.register({ draw: chart.draw });
     }
-  })();
-// === LOCAL PREVIEW FALLBACK ===
-if (!window.dscc) {
-  const sample = {
-    tables: {
-      DEFAULT: [
-        // 1) ACME → BioLab
-        {
-          dimensions: [
-            "Company","ACME Co.","http://acme.io","NYC","1998","500","$10M","http://acme.io",
-            "Partnership","Research Center","BioLab"
-          ],
-          metrics: [ 3 ]
-        },
-        // 2) FooCorp → UniTech
-        {
-          dimensions: [
-            "Company","FooCorp","http://foocorp.com","LA","2005","120","$2M","http://foocorp.com",
-            "Joint Venture","University","UniTech"
-          ],
-          metrics: [ 5 ]
-        },
-        // 3) Bar Labs → ACME Co.
-        {
-          dimensions: [
-            "Research Center","Bar Labs","http://barlabs.org","Boston","2010","80","$1.2M","http://barlabs.org",
-            "Collaboration","Company","ACME Co."
-          ],
-          metrics: [ 2 ]
-        }
-      ]
-    }
-  };
 
-  // Wait for the page to load, then draw:
-  window.addEventListener('load', () => chart.draw(sample));
-}
+    // === LOCAL PREVIEW FALLBACK ===
+    if (!window.dscc) {
+      console.log('🚀 FALLBACK firing—will draw sample data');
+      const sample = {
+        tables: {
+          DEFAULT: [
+            {
+              dimensions: [
+                "Company","ACME Co.","http://acme.io","NYC","1998","500","$10M","http://acme.io",
+                "Partnership","Research Center","BioLab"
+              ],
+              metrics: [ 3 ]
+            },
+            {
+              dimensions: [
+                "Company","FooCorp","http://foocorp.com","LA","2005","120","$2M","http://foocorp.com",
+                "Joint Venture","University","UniTech"
+              ],
+              metrics: [ 5 ]
+            },
+            {
+              dimensions: [
+                "Research Center","Bar Labs","http://barlabs.org","Boston","2010","80","$1.2M","http://barlabs.org",
+                "Collaboration","Company","ACME Co."
+              ],
+              metrics: [ 2 ]
+            }
+          ]
+        }
+      };
+      window.addEventListener('load', () => {
+        console.log('🚀 Calling chart.draw with sample');
+        chart.draw(sample);
+      });
+    }
+
+  })();
+  </script>
+</body>
+</html>
