@@ -6,30 +6,18 @@
 
   <!-- 1) Core Cytoscape -->
   <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
-
-  <!-- 2) cose-bilkent plugin (always latest) -->
-  <script src="https://unpkg.com/cytoscape-cose-bilkent/cytoscape-cose-bilkent.js"></script>
-
-  <!-- 3) Register cose-bilkent -->
-  <script>
-    // The unpkg bundle exposes `coseBilkent` on window
-    if (window.coseBilkent) {
-      cytoscape.use(window.coseBilkent);
-      console.log('✅ cose-bilkent plugin registered');
-    } else {
-      console.warn('⚠️ cose-bilkent plugin NOT found – check your <script> URL');
-    }
-  </script>
+  <!-- 2) cose-bilkent plugin (auto-registers itself) -->
+  <script src="https://unpkg.com/cytoscape-cose-bilkent@4/cytoscape-cose-bilkent.js"></script>
 
   <style>
     html, body { margin:0; padding:0; height:100%; }
     #cy { width:100%; height:100%; }
     #legend {
       position:absolute; top:10px; right:10px;
-      background:rgba(255,255,255,0.9); padding:8px;
-      font:12px sans-serif; white-space:pre-line;
-      border:1px solid #ccc; border-radius:4px;
-      max-width:200px;
+      background:rgba(255,255,255,0.9);
+      padding:8px; font:12px sans-serif;
+      white-space:pre-line; border:1px solid #ccc;
+      border-radius:4px; max-width:200px;
     }
   </style>
 </head>
@@ -42,202 +30,132 @@
     const dscc = window.dscc;
     const chart = {};
 
-    // 4) Build the network from Looker data
     chart.draw = function(data) {
-      const nodes = {};
-      const edges = [];
+      const nodes = {}, edges = [];
 
       data.tables.DEFAULT.forEach(row => {
-        const d = row.dimensions; // 0..10
-        const m = row.metrics;    // [0] = weight
-
-        // Source node (From Name)
+        const d = row.dimensions, m = row.metrics;
+        // build nodes
         if (!nodes[d[1]]) {
           nodes[d[1]] = { data: {
-            id:      d[1],
-            label:   d[1],
-            type:    d[0],  // From Type
-            website: d[2],
-            hq:      d[3],
-            founded: d[4],
-            emp:     d[5],
-            rev:     d[6],
-            link:    d[7],
-            degree:  0
+            id:d[1], label:d[1], type:d[0],
+            website:d[2], hq:d[3], founded:d[4],
+            emp:d[5], rev:d[6], link:d[7], degree:0
           }};
         }
-
-        // Target node (To Name)
         if (!nodes[d[10]]) {
-          nodes[d[10]] = { data: {
-            id:     d[10],
-            label:  d[10],
-            type:   d[9],  // To Type
-            degree: 0
-          }};
+          nodes[d[10]] = { data:{ id:d[10], label:d[10], type:d[9], degree:0 } };
         }
-
-        // Edge
-        edges.push({ data: {
-          id:     `${d[1]}→${d[10]}`,
-          source: d[1],
-          target: d[10],
-          type:   d[8],   // Edge Type
-          weight: +m[0]
+        // build edge
+        edges.push({ data:{
+          id:`${d[1]}→${d[10]}`,
+          source:d[1], target:d[10],
+          type:d[8], weight:+m[0]
         }});
-
-        // Increase degree for sizing
         nodes[d[1]].data.degree++;
         nodes[d[10]].data.degree++;
       });
 
-      const elements = {
-        nodes: Object.values(nodes),
-        edges: edges
-      };
+      const elements = { nodes:Object.values(nodes), edges };
 
-      // Initialize or update Cytoscape
       let cy = window._cyInstance;
       if (!cy) {
         cy = cytoscape({
           container: document.getElementById('cy'),
-          elements:  elements,
+          elements,
           style: [
-            // Nodes
             {
-              selector: 'node',
-              style: {
-                'background-color': n => {
-                  const map = {
-                    Company:          '#3399ff',
-                    University:       '#33cc33',
-                    'Research Center':'#ff9933'
-                  };
-                  return map[n.data('type')] || '#999999';
-                },
-                'width':  n => 10 + n.data('degree')*2,
-                'height': n => 10 + n.data('degree')*2,
-                'label':  'data(label)',
-                'font-size': 10,
-                'text-valign':'center',
-                'text-halign':'center'
+              selector:'node', style:{
+                'background-color': n=>({
+                  Company:'#3399ff',
+                  University:'#33cc33',
+                  'Research Center':'#ff9933'
+                }[n.data('type')]||'#999'),
+                'width':n=>10+n.data('degree')*2,
+                'height':n=>10+n.data('degree')*2,
+                'label':'data(label)','font-size':10,
+                'text-valign':'center','text-halign':'center'
               }
             },
-            // Edges
             {
-              selector: 'edge',
-              style: {
-                'width': 'mapData(weight, 0, 10, 1, 6)',
-                'line-color': e => {
-                  const map = {
-                    Partnership:    '#1f77b4',
-                    'Joint Venture':'#ff7f0e',
-                    Acquisition:    '#2ca02c',
-                    Collaboration:  '#d62728'
-                  };
-                  return map[e.data('type')] || '#bbbbbb';
-                },
-                'target-arrow-shape': 'triangle',
-                'target-arrow-color': e => {
-                  const map = {
-                    Partnership:    '#1f77b4',
-                    'Joint Venture':'#ff7f0e',
-                    Acquisition:    '#2ca02c',
-                    Collaboration:  '#d62728'
-                  };
-                  return map[e.data('type')] || '#bbbbbb';
-                }
+              selector:'edge', style:{
+                'width':'mapData(weight,0,10,1,6)',
+                'line-color':e=>({
+                  Partnership:'#1f77b4',
+                  'Joint Venture':'#ff7f0e',
+                  Acquisition:'#2ca02c',
+                  Collaboration:'#d62728'
+                }[e.data('type')]||'#bbb'),
+                'target-arrow-shape':'triangle',
+                'target-arrow-color':e=>({
+                  Partnership:'#1f77b4',
+                  'Joint Venture':'#ff7f0e',
+                  Acquisition:'#2ca02c',
+                  Collaboration:'#d62728'
+                }[e.data('type')]||'#bbb')
               }
             }
           ],
           layout: {
-            name:      'cose-bilkent',
-            fit:       true,
-            padding:   30,
-            randomize: true,
-            animate:   true
+            name:'cose-bilkent',
+            fit:true,
+            padding:30,
+            randomize:true,
+            animate:true
           }
         });
         window._cyInstance = cy;
       } else {
         cy.elements().remove();
         cy.add(elements);
-        cy.layout({
-          name:      'cose-bilkent',
-          fit:       true,
-          padding:   30,
-          randomize: true,
-          animate:   true
-        }).run();
+        cy.layout({ name:'cose-bilkent', fit:true, padding:30, randomize:true, animate:true }).run();
       }
 
-      // Hover tooltip
-      cy.on('mouseover', 'node', evt => {
+      cy.on('mouseover','node',evt=>{
         const d = evt.target.data();
         document.getElementById('legend').innerText =
-          `${d.label}\nType: ${d.type}\nFounded: ${d.founded}\nEmployees: ${d.emp}\nRevenue: ${d.rev}`;
+          `${d.label}\nType: ${d.type}\nFounded: ${d.founded}\nEmp: ${d.emp}\nRev: ${d.rev}`;
       });
-      cy.on('mouseout', 'node', () => {
-        document.getElementById('legend').innerText = '';
-      });
-
-      // Click to open link
-      cy.on('tap', 'node', evt => {
+      cy.on('mouseout','node',()=>document.getElementById('legend').innerText='');
+      cy.on('tap','node',evt=>{
         const url = evt.target.data('link');
-        if (url) window.open(url, '_blank');
+        if (url) window.open(url,'_blank');
       });
     };
 
-    // 5) Register with Looker Studio
+    // Hook into Looker Studio
     if (dscc && dscc.register) {
       dscc.register({ draw: chart.draw });
     }
 
-    // === LOCAL PREVIEW FALLBACK ===
+    // Fallback for local preview
     if (!window.dscc) {
       console.log('🚀 fallback running');
       const sample = {
-        tables: {
-          DEFAULT: [
-            {
-              dimensions: [
-                "Company","ACME Co.","http://acme.io","NYC","1998","500","$10M","http://acme.io",
-                "Partnership","Research Center","BioLab"
-              ],
-              metrics: [3]
-            },
-            {
-              dimensions: [
-                "Company","FooCorp","http://foocorp.com","LA","2005","120","$2M","http://foocorp.com",
-                "Joint Venture","University","UniTech"
-              ],
-              metrics: [5]
-            },
-            {
-              dimensions: [
-                "Research Center","Bar Labs","http://barlabs.org","Boston","2010","80","$1.2M","http://barlabs.org",
-                "Collaboration","Company","ACME Co."
-              ],
-              metrics: [2]
-            },
-            {
-              dimensions: [
-                "University","UniLab","http://unilab.edu","Cambridge","1870","1500","$200M","http://unilab.edu",
-                "Acquisition","Company","MegaCorp"
-              ],
-              metrics: [4]
-            },
-            {
-              dimensions: [
-                "Company","StartUpX","http://startupx.com","Berlin","2018","10","$1M","http://startupx.com",
-                "Collaboration","Research Center","BioLab"
-              ],
-              metrics: [2]
-            }
-          ]
-        }
+        tables:{ DEFAULT:[
+          { dimensions:[
+            "Company","ACME Co.","http://acme.io","NYC","1998","500","$10M","http://acme.io",
+            "Partnership","Research Center","BioLab"
+          ], metrics:[3] },
+          { dimensions:[
+            "Company","FooCorp","http://foocorp.com","LA","2005","120","$2M","http://foocorp.com",
+            "Joint Venture","University","UniTech"
+          ], metrics:[5] },
+          { dimensions:[
+            "Research Center","Bar Labs","http://barlabs.org","Boston","2010","80","$1.2M","http://barlabs.org",
+            "Collaboration","Company","ACME Co."
+          ], metrics:[2] },
+          { dimensions:[
+            "University","UniLab","http://unilab.edu","Cambridge","1870","1500","$200M","http://unilab.edu",
+            "Acquisition","Company","MegaCorp"
+          ], metrics:[4] },
+          { dimensions:[
+            "Company","StartUpX","http://startupx.com","Berlin","2018","10","$1M","http://startupx.com",
+            "Collaboration","Research Center","BioLab"
+          ], metrics:[2] }
+        ]}
       };
-      window.addEventListener('load', () => chart.draw(sample));
+      window.addEventListener('load',()=> chart.draw(sample));
     }
   })();
   </script>
