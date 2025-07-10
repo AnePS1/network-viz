@@ -4,22 +4,28 @@
   <meta charset="utf-8">
   <title>Network Community Viz</title>
 
-<!-- 1) Core Cytoscape -->
-<script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
+  <!-- 1) Core Cytoscape -->
+  <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
 
-<!-- 2) cose-bilkent layout plugin (JSDelivr) -->
-<script src="https://cdn.jsdelivr.net/npm/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
+  <!-- 2) cose-bilkent plugin from unpkg -->
+  <script src="https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
 
-<!-- 3) Register the cose-bilkent plugin -->
-<script>
-  // coseBilkent is the global from that JSDelivr bundle
-  if (window.coseBilkent) {
-    cytoscape.use(window.coseBilkent);
-    console.log('✅ cose-bilkent loaded');
-  } else {
-    console.warn('⚠️ cose-bilkent missing – check your src URL & version');
-  }
-</script>
+  <!-- 3) Register the cose-bilkent plugin -->
+  <script>
+    if (window.cytoscapeCoseBilkent) {
+      cytoscape.use(window.cytoscapeCoseBilkent);
+      console.log('✅ cose-bilkent plugin registered');
+    } else {
+      console.warn('⚠️ cose-bilkent plugin NOT found — check your src URL');
+    }
+  </script>
+
+  <style>
+    /* ...your existing CSS... */
+  </style>
+</head>
+<body>
+  <!-- your #cy and #legend divs, plus the chart.draw + fallback script below -->
 
   <style>
     html, body { margin:0; padding:0; height:100%; }
