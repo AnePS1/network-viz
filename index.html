@@ -172,15 +172,12 @@
       dscc.register({ draw: chart.draw });
     }
   })();
-  </script>
-</body>
-</html>
 // === LOCAL PREVIEW FALLBACK ===
 if (!window.dscc) {
   const sample = {
     tables: {
       DEFAULT: [
-        // Edge #1: ACME Co. → BioLab
+        // 1) ACME → BioLab
         {
           dimensions: [
             "Company","ACME Co.","http://acme.io","NYC","1998","500","$10M","http://acme.io",
@@ -188,7 +185,7 @@ if (!window.dscc) {
           ],
           metrics: [ 3 ]
         },
-        // Edge #2: FooCorp → UniTech
+        // 2) FooCorp → UniTech
         {
           dimensions: [
             "Company","FooCorp","http://foocorp.com","LA","2005","120","$2M","http://foocorp.com",
@@ -196,7 +193,7 @@ if (!window.dscc) {
           ],
           metrics: [ 5 ]
         },
-        // Edge #3: Bar Labs → ACME Co.
+        // 3) Bar Labs → ACME Co.
         {
           dimensions: [
             "Research Center","Bar Labs","http://barlabs.org","Boston","2010","80","$1.2M","http://barlabs.org",
@@ -207,5 +204,7 @@ if (!window.dscc) {
       ]
     }
   };
+
+  // Wait for the page to load, then draw:
   window.addEventListener('load', () => chart.draw(sample));
 }
