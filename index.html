@@ -4,20 +4,20 @@
   <meta charset="utf-8">
   <title>Network Community Viz</title>
 
-<!-- 1) Load Cytoscape core -->
+<!-- 1) Core Cytoscape -->
 <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
 
-<!-- 2) Load the cose-bilkent UMD bundle -->
-<script src="https://unpkg.com/cytoscape-cose-bilkent@4/cytoscape-cose-bilkent.umd.js"></script>
+<!-- 2) cose-bilkent layout plugin (JSDelivr) -->
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
 
-<!-- 3) Register cose-bilkent plugin once -->
+<!-- 3) Register the cose-bilkent plugin -->
 <script>
-  // cytoscapeCoseBilkent is exposed by the UMD build
-  if (window.cytoscapeCoseBilkent) {
-    cytoscape.use(window.cytoscapeCoseBilkent);
-    console.log('✅ cose-bilkent plugin registered');
+  // coseBilkent is the global from that JSDelivr bundle
+  if (window.coseBilkent) {
+    cytoscape.use(window.coseBilkent);
+    console.log('✅ cose-bilkent loaded');
   } else {
-    console.warn('⚠️ cose-bilkent plugin missing – check your script src');
+    console.warn('⚠️ cose-bilkent missing – check your src URL & version');
   }
 </script>
 
