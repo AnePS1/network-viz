@@ -1,10 +1,13 @@
 {
   "version": "1.0.0",
+  "assets": [
+    { "path": "index.html" }
+  ],
   "visualizations": [
     {
-      "id": "networkCommunityViz",
-      "name": "Network Community Viz",
-      "entrypoint": "index.html"
+      "id":        "networkCommunityViz",
+      "name":      "Network Community Viz",
+      "entrypoint":"index.html"
     }
   ]
 }
