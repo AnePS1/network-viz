@@ -2,31 +2,166 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Minimal Cytoscape Test</title>
+  <title>Full Network Preview</title>
+
+  <!-- 1) Load Cytoscape core -->
   <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
+  <!-- 2) Load cose-bilkent layout plugin -->
+  <script src="https://unpkg.com/cytoscape-cose-bilkent@4/cytoscape-cose-bilkent.js"></script>
+  <!-- 3) Register the plugin -->
+  <script>
+    if (window.coseBilkent) {
+      cytoscape.use(window.coseBilkent);
+      console.log('✅ cose-bilkent registered');
+    } else {
+      console.warn('⚠️ cose-bilkent missing');
+    }
+  </script>
+
   <style>
     html, body { margin:0; padding:0; height:100%; }
     #cy { width:100%; height:100%; }
+    #legend {
+      position:absolute; top:10px; right:10px;
+      background:rgba(255,255,255,0.9);
+      padding:6px; font:12px sans-serif;
+      white-space: pre-line; border:1px solid #ccc;
+      border-radius:4px; max-width:200px;
+    }
   </style>
 </head>
 <body>
   <div id="cy"></div>
+  <div id="legend"></div>
+
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      cytoscape({
-        container: document.getElementById('cy'),
-        elements: [
-          { data: { id: 'a' } },
-          { data: { id: 'b' } },
-          { data: { source: 'a', target: 'b', id: 'a_b' } }
-        ],
-        style: [
-          { selector: 'node', style: { 'background-color': '#3399ff', 'label': 'data(id)' } },
-          { selector: 'edge', style: { 'line-color': '#999', 'target-arrow-shape': 'triangle' } }
-        ],
-        layout: { name: 'grid' }
+  (function(){
+    // Simulate Looker Studio loading:
+    const isDataStudio = false;
+    // This is our dummy data—replace or extend these rows as you like:
+    const sample = {
+      tables: {
+        DEFAULT: [
+          // Row 1
+          {
+            dimensions: [
+              "Company","ACME Co.","http://acme.io","NYC","1998","500","$10M","http://acme.io",
+              "Partnership","Research Center","BioLab"
+            ],
+            metrics: [3]
+          },
+          // Row 2
+          {
+            dimensions: [
+              "Company","FooCorp","http://foocorp.com","LA","2005","120","$2M","http://foocorp.com",
+              "Joint Venture","University","UniTech"
+            ],
+            metrics: [5]
+          },
+          // Row 3
+          {
+            dimensions: [
+              "Research Center","Bar Labs","http://barlabs.org","Boston","2010","80","$1.2M","http://barlabs.org",
+              "Collaboration","Company","ACME Co."
+            ],
+            metrics: [2]
+          },
+          // Row 4 (extra)
+          {
+            dimensions: [
+              "University","UniLab","http://unilab.edu","Cambridge","1870","1500","$200M","http://unilab.edu",
+              "Acquisition","Company","MegaCorp"
+            ],
+            metrics: [4]
+          }
+        ]
+      }
+    };
+
+    // The core draw function, same as in Looker Studio
+    function draw(data) {
+      const nodes={}, edges=[];
+      data.tables.DEFAULT.forEach(r=>{
+        const d=r.dimensions, m=r.metrics;
+        if(!nodes[d[1]]){
+          nodes[d[1]]={data:{
+            id:d[1], label:d[1], type:d[0],
+            website:d[2], hq:d[3], founded:d[4],
+            emp:d[5], rev:d[6], link:d[7], degree:0
+          }};
+        }
+        if(!nodes[d[10]]){
+          nodes[d[10]]={data:{
+            id:d[10], label:d[10], type:d[9], degree:0
+          }};
+        }
+        edges.push({data:{
+          id:`${d[1]}→${d[10]}`, source:d[1], target:d[10],
+          type:d[8], weight:+m[0]
+        }});
+        nodes[d[1]].data.degree++;
+        nodes[d[10]].data.degree++;
       });
-    });
+
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: {
+          nodes: Object.values(nodes),
+          edges: edges
+        },
+        style: [
+          {
+            selector:'node', style:{
+              'background-color': n=>({
+                Company:'#3399ff',
+                University:'#33cc33',
+                'Research Center':'#ff9933'
+              }[n.data('type')]||'#999'),
+              'width':n=>10+n.data('degree')*2,
+              'height':n=>10+n.data('degree')*2,
+              'label':'data(label)','font-size':10
+            }
+          },
+          {
+            selector:'edge', style:{
+              'width':'mapData(weight,0,10,1,6)',
+              'line-color':e=>({
+                Partnership:'#1f77b4',
+                'Joint Venture':'#ff7f0e',
+                Acquisition:'#2ca02c',
+                Collaboration:'#d62728'
+              }[e.data('type')]||'#bbb'),
+              'target-arrow-shape':'triangle',
+              'target-arrow-color':e=>({
+                Partnership:'#1f77b4',
+                'Joint Venture':'#ff7f0e',
+                Acquisition:'#2ca02c',
+                Collaboration:'#d62728'
+              }[e.data('type')]||'#bbb')
+            }
+          }
+        ],
+        layout:{ name:'cose-bilkent', fit:true, padding:30, randomize:true, animate:true }
+      });
+
+      cy.on('mouseover','node',evt=>{
+        const d=evt.target.data();
+        document.getElementById('legend').innerText=
+          `${d.label}\nType: ${d.type}\nFounded: ${d.founded}\nEmployees: ${d.emp}\nRevenue: ${d.rev}`;
+      });
+      cy.on('mouseout','node',()=>document.getElementById('legend').innerText='');
+      cy.on('tap','node',evt=>{
+        const url=evt.target.data('link');
+        if(url) window.open(url,'_blank');
+      });
+    }
+
+    // If this page is loaded directly in the browser, call draw(sample)
+    if (!isDataStudio) {
+      window.addEventListener('load', () => draw(sample));
+    }
+    // (When embedded in Looker Studio, the dscc SDK would call chart.draw for you)
+  })();
   </script>
 </body>
 </html>
