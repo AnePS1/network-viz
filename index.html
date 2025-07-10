@@ -4,19 +4,22 @@
   <meta charset="utf-8">
   <title>Network Community Viz</title>
 
-  <!-- 1) Load Cytoscape core -->
-  <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
-  <!-- 2) Load cose-bilkent layout plugin -->
-  <script src="https://unpkg.com/cytoscape-cose-bilkent@4/cytoscape-cose-bilkent.js"></script>
-  <!-- 3) Register cose-bilkent -->
-  <script>
-    if (window.coseBilkent) {
-      cytoscape.use(window.coseBilkent);
-      console.log('✅ cose-bilkent registered');
-    } else {
-      console.warn('⚠️ cose-bilkent plugin missing');
-    }
-  </script>
+<!-- 1) Load Cytoscape core -->
+<script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
+
+<!-- 2) Load the cose-bilkent UMD bundle -->
+<script src="https://unpkg.com/cytoscape-cose-bilkent@4/cytoscape-cose-bilkent.umd.js"></script>
+
+<!-- 3) Register cose-bilkent plugin once -->
+<script>
+  // cytoscapeCoseBilkent is exposed by the UMD build
+  if (window.cytoscapeCoseBilkent) {
+    cytoscape.use(window.cytoscapeCoseBilkent);
+    console.log('✅ cose-bilkent plugin registered');
+  } else {
+    console.warn('⚠️ cose-bilkent plugin missing – check your script src');
+  }
+</script>
 
   <style>
     html, body { margin:0; padding:0; height:100%; }
